@@ -228,7 +228,23 @@
   .login-gate{padding:calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom))}
   .is-app,.is-app body{overscroll-behavior:none}
   .is-app *{-webkit-tap-highlight-color:transparent}
-  .fab,.sheet-x,.sheet-bd,.tk-sum,.tk-chev,.more-btn,.more-menu{display:none}
+  .fab,.sheet-x,.sheet-bd,.tk-sum,.more-btn,.more-menu{display:none}
+
+  /* collapse single coins / all coins (desktop + phone) */
+  .token-head{cursor:pointer;user-select:none;-webkit-user-select:none}
+  .token-head:focus-visible{outline:2px solid var(--locked);outline-offset:-2px;border-radius:14px}
+  .tk-chev{display:block;color:var(--muted2);transition:transform .2s,color .15s;flex:0 0 auto;order:10}
+  .token-head:hover .tk-chev{color:var(--txt)}
+  .token.collapsed .tk-chev{transform:rotate(-90deg)}
+  .token.collapsed .lots{display:none}
+  .groups-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 2px 10px}
+  .groups-bar h3{font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted2);font-weight:600}
+  .gb-btns{display:flex;gap:6px}
+  .gb-btns button{background:var(--bg3);border:1px solid var(--line);color:var(--muted);font-family:var(--mono);font-size:11.5px;padding:6px 11px;border-radius:8px;cursor:pointer;transition:.15s}
+  .gb-btns button:hover:not(:disabled){color:var(--txt);border-color:#31404f}
+  .gb-btns button:disabled{opacity:.4;cursor:default}
+  .gb-btns button{white-space:nowrap}
+  .gb-short{display:none}
 
   @media(max-width:640px){
     body{padding:0 calc(14px + env(safe-area-inset-right)) calc(110px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left))}
@@ -297,7 +313,9 @@
     .tk-sum{display:block;margin-left:auto;text-align:right}
     .tk-sum .v{font-family:var(--mono);font-size:15px;font-weight:600}
     .tk-sum .g{font-family:var(--mono);font-size:12px;margin-top:1px}
-    .tk-chev{display:block;color:var(--muted2);transition:transform .2s;flex:0 0 auto}
+    .tk-chev{order:0}
+    .gb-btns button{font-size:12.5px;padding:8px 12px}
+    .gb-long{display:none} .gb-short{display:inline}
     .token.collapsed .tk-chev{transform:rotate(-90deg)}
     .tk-metrics{margin-left:0;width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
     .tk-m{text-align:left}
@@ -429,6 +447,13 @@
   </div>
 
   <!-- token groups -->
+  <div class="groups-bar" id="groupsBar" style="display:none">
+    <h3>Positionen</h3>
+    <div class="gb-btns">
+      <button id="collapseAll" type="button" title="Alle Coins zuklappen">− Alle <span class="gb-long">zuklappen</span><span class="gb-short">zu</span></button>
+      <button id="expandAll" type="button" title="Alle Coins aufklappen">+ Alle <span class="gb-long">aufklappen</span><span class="gb-short">auf</span></button>
+    </div>
+  </div>
   <div id="groups"></div>
 
   <div class="tools">
@@ -493,7 +518,7 @@ const HOLD_DAYS = 365, SOON_DAYS = 60;
 let state = { batches:[], target:1000000, prices:{} };
 let colorMap = {};
 const isPhone = () => window.matchMedia("(max-width:640px)").matches;
-let collapsed = new Set();   // coin sections collapsed on the phone (remembered)
+let collapsed = new Set();   // collapsed coin sections (remembered per device)
 try{ collapsed = new Set(JSON.parse(localStorage.getItem("frist_collapsed")||"[]")); }catch(e){}
 
 /* ---------- persistence: batches → Supabase, prefs → localStorage ---------- */
@@ -778,6 +803,7 @@ function render(){
   // groups
   const gEl=document.getElementById("groups");
   if(!state.batches.length){
+    document.getElementById("groupsBar").style.display="none";
     gEl.innerHTML=`<div class="empty"><div class="big">Noch keine Positionen</div>Erfasse deinen ersten Batch — die Uhr für die 12-Monats-Frist startet ab dem Kaufdatum.</div>`;
     return;
   }
@@ -815,7 +841,7 @@ function render(){
     }).join("");
     const glTxt=p!=null?(gl>=0?"+":"")+glPct.toFixed(1)+"%":"—", glCol=gl>=0?'var(--free)':'var(--neg)';
     return `<div class="token${collapsed.has(tk)?" collapsed":""}" data-tk="${tk}">
-      <div class="token-head">
+      <div class="token-head" role="button" tabindex="0" aria-expanded="${collapsed.has(tk)?"false":"true"}" title="ein-/ausklappen">
         <div class="tk-badge" style="background:${c}22;color:${c};border:1px solid ${c}55">${tk.slice(0,4)}</div>
         <div><span class="tk-name">${tk}</span><span class="tk-type">${lots[0].type}</span></div>
         <div class="tk-sum"><div class="v">${eur(val)}</div><div class="g" style="color:${glCol}">${glTxt} · ${lots.length}×</div></div>
@@ -835,13 +861,28 @@ function render(){
   gEl.querySelectorAll(".edit").forEach(btn=>btn.onclick=()=>openEdit(btn.dataset.id));
   // phone: tap a purchase row to edit, tap a coin header to collapse/expand
   gEl.querySelectorAll(".lot").forEach(row=>row.addEventListener("click",()=>{ if(isPhone()) openEdit(row.dataset.id); }));
-  gEl.querySelectorAll(".token-head").forEach(h=>h.addEventListener("click",()=>{
-    if(!isPhone()) return;
-    const t=h.parentElement, tk=t.dataset.tk;
-    t.classList.toggle("collapsed");
-    if(t.classList.contains("collapsed")) collapsed.add(tk); else collapsed.delete(tk);
-    try{ localStorage.setItem("frist_collapsed", JSON.stringify([...collapsed])); }catch(e){}
-  }));
+  gEl.querySelectorAll(".token-head").forEach(h=>{
+    h.addEventListener("click",()=>toggleCoin(h.parentElement));
+    h.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); toggleCoin(h.parentElement); } });
+  });
+  updateGroupsBar();
+}
+
+/* ---------- collapse single coins / all coins ---------- */
+function saveCollapsed(){ try{ localStorage.setItem("frist_collapsed", JSON.stringify([...collapsed])); }catch(e){} }
+function setCoin(t, isCollapsed){
+  t.classList.toggle("collapsed", isCollapsed);
+  t.querySelector(".token-head").setAttribute("aria-expanded", String(!isCollapsed));
+  if(isCollapsed) collapsed.add(t.dataset.tk); else collapsed.delete(t.dataset.tk);
+}
+function toggleCoin(t){ setCoin(t, !t.classList.contains("collapsed")); saveCollapsed(); updateGroupsBar(); }
+function setAllCoins(isCollapsed){ document.querySelectorAll("#groups .token").forEach(t=>setCoin(t,isCollapsed)); saveCollapsed(); updateGroupsBar(); }
+function updateGroupsBar(){
+  const tokens=[...document.querySelectorAll("#groups .token")];
+  document.getElementById("groupsBar").style.display = tokens.length ? "flex" : "none";
+  const n=tokens.filter(t=>t.classList.contains("collapsed")).length;
+  document.getElementById("collapseAll").disabled = n===tokens.length;
+  document.getElementById("expandAll").disabled = n===0;
 }
 
 /* ---------- export / import / target ---------- */
@@ -899,6 +940,8 @@ document.getElementById("eDate").addEventListener("change", onEditDateChange);
 document.getElementById("editModal").addEventListener("click",e=>{ if(e.target.id==="editModal") closeEdit(); });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ closeCal(); closeEdit(); closeSheet(); closeMenu(); } });
 document.getElementById("fab").onclick=openSheet;
+document.getElementById("collapseAll").onclick=()=>setAllCoins(true);
+document.getElementById("expandAll").onclick=()=>setAllCoins(false);
 document.getElementById("sheetX").onclick=closeSheet;
 document.getElementById("sheetBd").onclick=closeSheet;
 document.getElementById("moreBtn").onclick=e=>{ e.stopPropagation(); document.getElementById("moreMenu").classList.toggle("open"); };
