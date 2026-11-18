@@ -2,8 +2,16 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0d1015" />
 <title>FRIST — Haltefrist &amp; Portfolio Tracker</title>
+<script>
+  /* iOS app (Capacitor): lock zoom, flag the page so app-only styles apply */
+  if(window.Capacitor){
+    document.documentElement.classList.add("is-app");
+    document.querySelector('meta[name="viewport"]').setAttribute("content","width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover");
+  }
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -210,6 +218,117 @@
     font-family:var(--disp);font-weight:600;font-size:14px;cursor:pointer;transition:.15s}
   .login-btn:hover{filter:brightness(1.08)}
   .login-err{color:var(--neg);font-size:12px;margin-top:12px;min-height:16px}
+
+  /* ===================================================================
+     PHONE + APP LAYER — everything below only changes narrow screens
+     (≤640px) or the iOS app; the desktop layout stays as above.
+     =================================================================== */
+  html{background:var(--bg);-webkit-text-size-adjust:100%;touch-action:manipulation}
+  body{padding:calc(24px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(80px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left))}
+  .login-gate{padding:calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom))}
+  .is-app,.is-app body{overscroll-behavior:none}
+  .is-app *{-webkit-tap-highlight-color:transparent}
+  .fab,.sheet-x,.sheet-bd,.tk-sum,.tk-chev,.more-btn,.more-menu{display:none}
+
+  @media(max-width:640px){
+    body{padding:0 calc(14px + env(safe-area-inset-right)) calc(110px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left))}
+
+    /* 16px fields = no iOS auto-zoom on focus; 44px = comfortable tap size */
+    input,select,.datefield,.cal-head select{font-size:16px}
+    input,select,.datefield{min-height:44px}
+    .ccy-sel{min-height:0;width:auto;padding:0 4px;font-size:16px}
+
+    /* sticky top bar (respects notch / Dynamic Island) */
+    header{position:sticky;top:0;z-index:30;flex-wrap:nowrap;align-items:center;gap:8px;
+      margin:0 calc(-14px - env(safe-area-inset-right)) 14px calc(-14px - env(safe-area-inset-left));
+      padding:calc(10px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 10px calc(14px + env(safe-area-inset-left));
+      background:rgba(13,16,21,.86);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+    .brand{gap:10px;align-items:center;min-width:0}
+    .logo{font-size:21px;letter-spacing:1.5px}
+    .nav a{padding:7px 11px;font-size:13.5px}
+    #refreshTxt,#logoutBtn{display:none}
+    .refresh{width:40px;height:40px;padding:0;justify-content:center}
+    .more-btn{display:flex;font-size:18px;letter-spacing:1px}
+    .more-menu.open{display:block;position:fixed;z-index:75;top:calc(62px + env(safe-area-inset-top));right:calc(12px + env(safe-area-inset-right));
+      background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:6px;min-width:210px;box-shadow:0 14px 44px rgba(0,0,0,.6)}
+    .more-menu button{display:block;width:100%;text-align:left;background:none;border:none;color:var(--txt);font-family:var(--sans);font-size:15.5px;padding:12px;border-radius:9px;cursor:pointer}
+    .more-menu button:active{background:var(--bg3)}
+    .more-menu .sep{height:1px;background:var(--line);margin:4px 8px}
+    .more-menu .danger{color:var(--neg)}
+    .tools{display:none}
+
+    /* dashboard + timeline */
+    .dash{padding:16px;border-radius:14px;margin-bottom:12px}
+    .stats{gap:14px 12px}
+    .stat .val{font-size:19px}
+    .timeline{margin-bottom:14px}
+    .chips{margin:0 -16px;padding:0 16px 2px;scrollbar-width:none}
+    .chips::-webkit-scrollbar{display:none}
+
+    /* "Batch erfassen" → bottom sheet opened by the + button */
+    .add{position:fixed;left:0;right:0;bottom:0;z-index:70;margin:0;border-radius:20px 20px 0 0;border-bottom:none;
+      padding:18px calc(16px + env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
+      max-height:88vh;overflow-y:auto;transform:translateY(105%);visibility:hidden;
+      transition:transform .28s cubic-bezier(.2,.8,.2,1),visibility 0s linear .28s;box-shadow:0 -14px 44px rgba(0,0,0,.55)}
+    body.sheet-open .add{transform:none;visibility:visible;transition:transform .28s cubic-bezier(.2,.8,.2,1)}
+    .add h3{font-size:17px;margin-bottom:16px}
+    .sheet-x{display:grid;place-items:center;margin-left:auto;width:36px;height:36px;border-radius:50%;background:var(--bg3);border:1px solid var(--line);color:var(--muted);font-size:20px;line-height:1;cursor:pointer}
+    .sheet-bd{display:block;position:fixed;inset:0;z-index:65;background:rgba(6,9,13,.62);opacity:0;pointer-events:none;transition:opacity .2s}
+    body.sheet-open .sheet-bd{opacity:1;pointer-events:auto}
+    .frow{gap:12px}
+    .price-field{grid-column:1/-1}
+    .fetch-btn{top:auto;bottom:8px;font-size:12px;padding:7px 10px}
+    #fPrice{padding-right:84px}
+    .btn-add{height:50px;font-size:15.5px;margin-top:4px}
+    .fab{display:grid;place-items:center;position:fixed;z-index:40;right:calc(18px + env(safe-area-inset-right));bottom:calc(22px + env(safe-area-inset-bottom));
+      width:60px;height:60px;border-radius:50%;border:none;background:var(--free);color:#04150f;font-size:32px;font-weight:500;line-height:1;cursor:pointer;
+      box-shadow:0 8px 26px rgba(52,214,163,.32),0 4px 14px rgba(0,0,0,.45);transition:opacity .2s,transform .2s}
+    .fab:active{transform:scale(.94)}
+    body.sheet-open .fab{opacity:0;pointer-events:none}
+
+    /* calendar: bigger tap targets */
+    .cal-pop{width:min(320px,calc(100vw - 16px))}
+    .cal-day{font-size:15px}
+    .cal-nav{width:36px;height:36px}
+
+    /* coin sections: one-line summary, tap to collapse */
+    .token{margin-bottom:12px}
+    .token-head{padding:13px 14px;gap:10px 12px;cursor:pointer;user-select:none;-webkit-user-select:none}
+    .tk-sum{display:block;margin-left:auto;text-align:right}
+    .tk-sum .v{font-family:var(--mono);font-size:15px;font-weight:600}
+    .tk-sum .g{font-family:var(--mono);font-size:12px;margin-top:1px}
+    .tk-chev{display:block;color:var(--muted2);transition:transform .2s;flex:0 0 auto}
+    .token.collapsed .tk-chev{transform:rotate(-90deg)}
+    .tk-metrics{margin-left:0;width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .tk-m{text-align:left}
+    .tk-m.m-val,.tk-m.m-gl{display:none}
+    .tk-m .v{font-size:13px}
+    .token.collapsed .tk-metrics,.token.collapsed .lots{display:none}
+
+    /* purchase rows: tap anywhere to edit */
+    .lot{grid-template-columns:1fr auto;grid-template-areas:"info status" "bar bar";gap:10px 12px;padding:13px 14px;cursor:pointer}
+    .lot:hover{background:none}
+    .lot:active{background:#151b24}
+    .lot-info{grid-area:info} .lot-status{grid-area:status} .bar-area{grid-area:bar}
+    .lot .edit{display:none}
+    .bar-meta span:first-child{display:none}
+    .bar-meta{font-size:11px}
+    .lot-info .ld{font-size:14px}
+    .lot-info .lq{font-size:12.5px}
+    .lot-status .badge{font-size:11px;padding:4px 9px}
+    .lot-status .free-on{font-size:12.5px;color:var(--txt)}
+
+    /* edit dialog → bottom sheet */
+    .modal{place-items:end stretch;padding:0}
+    .modal-card{max-width:none;border-radius:20px 20px 0 0;border-bottom:none;max-height:92vh;overflow-y:auto;
+      padding:20px calc(16px + env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left))}
+    .modal-title{font-size:17px}
+    .modal-actions button{min-height:48px;font-size:15px}
+
+    /* login */
+    .login-card{padding:30px 22px}
+    .login-btn{min-height:50px;font-size:15.5px}
+  }
 </style>
 </head>
 <body>
@@ -240,8 +359,16 @@
         <span id="refreshTxt">Kurse laden</span>
       </button>
       <button class="refresh" id="logoutBtn" title="Abmelden">Abmelden</button>
+      <button class="refresh more-btn" id="moreBtn" title="Mehr" aria-label="Mehr">⋯</button>
     </div>
   </header>
+  <div class="more-menu" id="moreMenu">
+    <button data-act="exportBtn">↑ Export JSON</button>
+    <button data-act="importBtn">↓ Import JSON</button>
+    <button data-act="targetBtn">◎ Ziel ändern</button>
+    <div class="sep"></div>
+    <button data-act="logoutBtn" class="danger">Abmelden</button>
+  </div>
 
   <!-- dashboard -->
   <div class="dash">
@@ -270,8 +397,10 @@
   </div>
 
   <!-- add form -->
+  <div class="sheet-bd" id="sheetBd"></div>
+  <button class="fab" id="fab" aria-label="Batch erfassen">+</button>
   <div class="add">
-    <h3>Batch erfassen</h3>
+    <h3>Batch erfassen<button class="sheet-x" id="sheetX" type="button" aria-label="Schließen">×</button></h3>
     <div class="frow">
       <div class="field">
         <label>Typ</label>
@@ -356,13 +485,16 @@ const SB_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsIn
 const sb = createClient(SB_URL, SB_ANON);
 
 /* ---------- config ---------- */
-const CG_IDS = { BTC:"bitcoin", ETH:"ethereum", SOL:"solana", AVAX:"avalanche-2", ONDO:"ondo-finance", TAO:"bittensor" };
+const CG_IDS = { BTC:"bitcoin", ETH:"ethereum", SOL:"solana", AVAX:"avalanche-2", ONDO:"ondo-finance", TAO:"bittensor", CRO:"crypto-com-chain", BEAM:"beam-2", SUPER:"superfarm" };
 const TOKEN_COLORS = ["#6b8cff","#34d6a3","#f0a83c","#c77dff","#ff8f6b","#4fd8e0","#e0d24f","#ff6b9d"];
 const HOLD_DAYS = 365, SOON_DAYS = 60;
 
 /* ---------- state ---------- */
 let state = { batches:[], target:1000000, prices:{} };
 let colorMap = {};
+const isPhone = () => window.matchMedia("(max-width:640px)").matches;
+let collapsed = new Set();   // coin sections collapsed on the phone (remembered)
+try{ collapsed = new Set(JSON.parse(localStorage.getItem("frist_collapsed")||"[]")); }catch(e){}
 
 /* ---------- persistence: batches → Supabase, prefs → localStorage ---------- */
 function save(){ try{ localStorage.setItem("frist_prefs", JSON.stringify({target:state.target, prices:state.prices})); }catch(e){} }
@@ -434,7 +566,7 @@ async function fetchEntryPrice(){
   const tk=document.getElementById("fTicker").value.trim().toUpperCase();
   const dt=document.getElementById("fDate").value;
   const ccy=document.getElementById("fCcy").value;
-  if(!CG_IDS[tk]||!dt){ setNote("Auto-Kurs nur für bekannte Krypto-Ticker (BTC, ETH, SOL, AVAX, ONDO, TAO) mit Datum."); return; }
+  if(!CG_IDS[tk]||!dt){ setNote("Auto-Kurs nur für bekannte Krypto-Ticker (BTC, ETH, SOL, AVAX, ONDO, TAO, CRO, BEAM, SUPER) mit Datum."); return; }
   const px=await priceBothOn(tk,dt);
   if(!px){ setNote("Historischer Kurs nicht abrufbar (Rate-Limit). Kurs bitte manuell eintragen."); return; }
   const p = ccy==="USD" ? (px.usd??px.eur) : px.eur;
@@ -461,7 +593,7 @@ async function addBatch(){
     type, ticker, bought_at:date+"T12:00:00", qty, entry_price:entryEur, amount_eur:qty*entryEur, source:"app"
   });
   if(error){ setNote("Speichern fehlgeschlagen: "+error.message); return; }
-  await fetchBatches(); clearForm(); setNote(""); render();
+  await fetchBatches(); clearForm(); setNote(""); closeSheet(); render();
   if(type==="crypto"&&CG_IDS[ticker]&&priceOf(ticker)==null) refreshPrices();
 }
 async function delBatch(id){ const { error }=await sb.from("batches").delete().eq("id",id); if(error){ setNote("Löschen fehlgeschlagen: "+error.message); return; } await fetchBatches(); render(); }
@@ -582,6 +714,11 @@ function pickDay(iso){
 function clearForm(){ ["fTicker","fQty","fPrice"].forEach(i=>document.getElementById(i).value=""); }
 function setNote(t){ document.getElementById("note").textContent=t; }
 
+/* ---------- phone: add-sheet + ⋯ menu ---------- */
+function openSheet(){ closeMenu(); document.body.classList.add("sheet-open"); }
+function closeSheet(){ document.body.classList.remove("sheet-open"); closeCal(); }
+function closeMenu(){ document.getElementById("moreMenu").classList.remove("open"); }
+
 /* ---------- render ---------- */
 function render(){
   const groups={};
@@ -662,7 +799,7 @@ function render(){
         :s.key==="soon"?`<span class="badge b-soon">${s.remaining} T</span>`
         :`<span class="badge b-locked">${s.remaining} T</span>`;
       const statusTxt=s.key==="free"?"seit "+fmtDate(s.freeDate):`${s.remaining} Tage bis steuerfrei`;
-      return `<div class="lot">
+      return `<div class="lot" data-id="${b.id}">
         <div class="lot-info">
           <div class="ld">${fmtDate(parseD(b.date))}</div>
           <div class="lq">${num(b.qty)} @ ${eur(b.entryPrice)}</div>
@@ -676,16 +813,19 @@ function render(){
         <button class="edit" data-id="${b.id}" title="bearbeiten"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
       </div>`;
     }).join("");
-    return `<div class="token">
+    const glTxt=p!=null?(gl>=0?"+":"")+glPct.toFixed(1)+"%":"—", glCol=gl>=0?'var(--free)':'var(--neg)';
+    return `<div class="token${collapsed.has(tk)?" collapsed":""}" data-tk="${tk}">
       <div class="token-head">
         <div class="tk-badge" style="background:${c}22;color:${c};border:1px solid ${c}55">${tk.slice(0,4)}</div>
         <div><span class="tk-name">${tk}</span><span class="tk-type">${lots[0].type}</span></div>
+        <div class="tk-sum"><div class="v">${eur(val)}</div><div class="g" style="color:${glCol}">${glTxt} · ${lots.length}×</div></div>
+        <svg class="tk-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
         <div class="tk-metrics">
           <div class="tk-m"><div class="l">Bestand</div><div class="v">${num(totQty)}</div></div>
           <div class="tk-m"><div class="l">Ø Einstieg</div><div class="v">${eur(avg)}</div></div>
           <div class="tk-m"><div class="l">Kurs</div><div class="v">${p!=null?eur(p):"—"}</div></div>
-          <div class="tk-m"><div class="l">Wert</div><div class="v">${eur(val)}</div></div>
-          <div class="tk-m"><div class="l">G/V</div><div class="v" style="color:${gl>=0?'var(--free)':'var(--neg)'}">${p!=null?(gl>=0?"+":"")+glPct.toFixed(1)+"%":"—"}</div></div>
+          <div class="tk-m m-val"><div class="l">Wert</div><div class="v">${eur(val)}</div></div>
+          <div class="tk-m m-gl"><div class="l">G/V</div><div class="v" style="color:${glCol}">${glTxt}</div></div>
         </div>
       </div>
       <div class="lots">${lotHtml}</div>
@@ -693,13 +833,30 @@ function render(){
   }).join("");
 
   gEl.querySelectorAll(".edit").forEach(btn=>btn.onclick=()=>openEdit(btn.dataset.id));
+  // phone: tap a purchase row to edit, tap a coin header to collapse/expand
+  gEl.querySelectorAll(".lot").forEach(row=>row.addEventListener("click",()=>{ if(isPhone()) openEdit(row.dataset.id); }));
+  gEl.querySelectorAll(".token-head").forEach(h=>h.addEventListener("click",()=>{
+    if(!isPhone()) return;
+    const t=h.parentElement, tk=t.dataset.tk;
+    t.classList.toggle("collapsed");
+    if(t.classList.contains("collapsed")) collapsed.add(tk); else collapsed.delete(tk);
+    try{ localStorage.setItem("frist_collapsed", JSON.stringify([...collapsed])); }catch(e){}
+  }));
 }
 
 /* ---------- export / import / target ---------- */
-function exportJSON(){
+async function exportJSON(){
+  const name="frist-backup-"+new Date().toISOString().slice(0,10)+".json";
   const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  // in the iOS app there is no download folder → use the share sheet (save to Files, AirDrop, …)
+  if(window.Capacitor && navigator.share){
+    const file=new File([blob],name,{type:"application/json"});
+    if(!navigator.canShare || navigator.canShare({files:[file]})){
+      try{ await navigator.share({files:[file],title:name}); return; }catch(e){ if(e?.name==="AbortError") return; }
+    }
+  }
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
-  a.download="frist-backup-"+new Date().toISOString().slice(0,10)+".json"; a.click();
+  a.download=name; a.click();
 }
 function importJSON(file){
   const r=new FileReader();
@@ -740,7 +897,14 @@ document.getElementById("ePrice").addEventListener("input", recalcAmount);
 document.getElementById("eAmount").addEventListener("input", recalcQty);
 document.getElementById("eDate").addEventListener("change", onEditDateChange);
 document.getElementById("editModal").addEventListener("click",e=>{ if(e.target.id==="editModal") closeEdit(); });
-document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ closeCal(); closeEdit(); } });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ closeCal(); closeEdit(); closeSheet(); closeMenu(); } });
+document.getElementById("fab").onclick=openSheet;
+document.getElementById("sheetX").onclick=closeSheet;
+document.getElementById("sheetBd").onclick=closeSheet;
+document.getElementById("moreBtn").onclick=e=>{ e.stopPropagation(); document.getElementById("moreMenu").classList.toggle("open"); };
+document.querySelectorAll("#moreMenu [data-act]").forEach(b=>b.onclick=()=>{ closeMenu(); document.getElementById(b.dataset.act).click(); });
+document.addEventListener("click",e=>{ if(!e.target.closest("#moreMenu,#moreBtn")) closeMenu(); });
+window.matchMedia("(max-width:640px)").addEventListener("change",e=>{ if(!e.matches){ closeSheet(); closeMenu(); } });
 document.querySelectorAll(".datefield").forEach(df=>df.onclick=e=>{ e.stopPropagation(); openCal(df); });
 document.querySelectorAll(".cal-nav").forEach(b=>b.onclick=()=>{
   let m=Number(document.getElementById("calMonth").value)+Number(b.dataset.nav), y=Number(document.getElementById("calYear").value);

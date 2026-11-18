@@ -2,8 +2,16 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0d1015" />
 <title>FRIST — Übersicht</title>
+<script>
+  /* iOS app (Capacitor): lock zoom, flag the page so app-only styles apply */
+  if(window.Capacitor){
+    document.documentElement.classList.add("is-app");
+    document.querySelector('meta[name="viewport"]').setAttribute("content","width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover");
+  }
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -96,6 +104,37 @@
   .login-btn{width:100%;background:var(--free);color:#04150f;border:none;border-radius:10px;padding:12px;font-family:var(--disp);font-weight:600;font-size:14px;cursor:pointer}
   .login-err{color:var(--neg);font-size:12px;margin-top:12px;min-height:16px}
   @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+  /* ===================================================================
+     PHONE + APP LAYER — only narrow screens (≤640px) or the iOS app
+     =================================================================== */
+  html{background:var(--bg);-webkit-text-size-adjust:100%;touch-action:manipulation}
+  body{padding:calc(24px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(80px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left))}
+  .login-gate{padding:calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom))}
+  .is-app,.is-app body{overscroll-behavior:none}
+  .is-app *{-webkit-tap-highlight-color:transparent}
+
+  @media(max-width:640px){
+    body{padding:0 calc(14px + env(safe-area-inset-right)) calc(40px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left))}
+    .login-card input{font-size:16px;min-height:44px}
+    .login-card{padding:30px 22px}
+    .login-btn{min-height:50px;font-size:15.5px}
+    header{position:sticky;top:0;z-index:30;flex-wrap:nowrap;gap:8px;
+      margin:0 calc(-14px - env(safe-area-inset-right)) 14px calc(-14px - env(safe-area-inset-left));
+      padding:calc(10px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 10px calc(14px + env(safe-area-inset-left));
+      background:rgba(13,16,21,.86);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+    .brand{gap:10px;align-items:center;min-width:0}
+    .logo{font-size:21px;letter-spacing:1.5px}
+    .nav a{padding:7px 11px;font-size:13.5px}
+    #refreshTxt,#logoutBtn{display:none}   /* Abmelden lives in the Tracker ⋯ menu */
+    #refreshBtn{width:40px;height:40px;padding:0;justify-content:center}
+    .kpis{gap:10px;margin-bottom:12px}
+    .kpi{padding:14px}
+    .kpi .val{font-size:19px}
+    .card{padding:16px;margin-bottom:12px;border-radius:14px}
+    .ranges button{font-size:12.5px;padding:7px 12px}
+    .donut-row{justify-content:center}
+  }
 </style>
 </head>
 <body>
@@ -178,7 +217,7 @@ const CG_KEY  = ""; // optional CoinGecko Demo-Key; leer lassen ist ok
 /* =========================================================== */
 const sb = createClient(SB_URL, SB_ANON);
 
-const CG_IDS = { BTC:"bitcoin", ETH:"ethereum", SOL:"solana", AVAX:"avalanche-2", ONDO:"ondo-finance", TAO:"bittensor" };
+const CG_IDS = { BTC:"bitcoin", ETH:"ethereum", SOL:"solana", AVAX:"avalanche-2", ONDO:"ondo-finance", TAO:"bittensor", CRO:"crypto-com-chain", BEAM:"beam-2", SUPER:"superfarm" };
 const TOKEN_COLORS = ["#6b8cff","#34d6a3","#f0a83c","#c77dff","#ff8f6b","#4fd8e0","#e0d24f","#ff6b9d"];
 const HOLD_DAYS=365, DAY=86400000;
 
