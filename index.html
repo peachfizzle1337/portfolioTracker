@@ -246,6 +246,36 @@
   .gb-btns button{white-space:nowrap}
   .gb-short{display:none}
 
+  /* view switch: Nach Coin | Verlauf */
+  .view-seg{display:flex;gap:4px;background:var(--bg3);border:1px solid var(--line);border-radius:10px;padding:3px}
+  .view-seg button{background:none;border:none;color:var(--muted);font-family:var(--sans);font-size:12.5px;font-weight:500;padding:6px 12px;border-radius:7px;cursor:pointer;transition:.15s;white-space:nowrap}
+  .view-seg button:hover{color:var(--txt)}
+  .view-seg button.on{background:var(--bg);color:var(--txt)}
+
+  /* order history (Verlauf) */
+  .h-filter{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-bottom:10px;padding-bottom:2px}
+  .h-filter::-webkit-scrollbar{display:none}
+  .h-filter button{flex:0 0 auto;background:var(--bg3);border:1px solid var(--line);color:var(--muted);font-family:var(--mono);font-size:11.5px;font-weight:600;padding:6px 12px;border-radius:99px;cursor:pointer;transition:.15s}
+  .h-filter button:hover{color:var(--txt)}
+  .h-filter button.on{color:#04150f;background:var(--free);border-color:var(--free)}
+  .h-sum{font-size:12px;color:var(--muted);margin:0 2px 10px}
+  .h-month{background:var(--bg2);border:1px solid var(--line);border-radius:14px;margin-bottom:12px;overflow:hidden}
+  .h-mhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:10px 16px;background:#10151c;border-bottom:1px solid var(--line)}
+  .h-mhead .m{font-family:var(--disp);font-weight:600;font-size:13.5px}
+  .h-mhead .s{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+  .h-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:5px 14px;padding:11px 16px;border-bottom:1px solid #1a2028;cursor:pointer;transition:background .15s}
+  .h-row:last-child{border-bottom:none}
+  .h-row:hover{background:#151b24}
+  .h-row:focus-visible{outline:2px solid var(--locked);outline-offset:-2px}
+  .h-l1{display:flex;align-items:center;gap:9px;min-width:0;flex-wrap:wrap}
+  .h-date{font-family:var(--mono);font-size:12.5px}
+  .h-tk{font-family:var(--mono);font-weight:600;font-size:11.5px;padding:2px 8px;border-radius:6px}
+  .h-l1 .badge{font-family:var(--mono);font-size:10px;font-weight:600;padding:2px 7px;border-radius:6px;letter-spacing:.3px}
+  .h-amt{font-family:var(--mono);font-size:14px;font-weight:600;text-align:right}
+  .h-l2{font-size:12px;color:var(--muted);min-width:0}
+  .h-l2 .src{color:var(--muted2)}
+  .h-now{font-family:var(--mono);font-size:11.5px;text-align:right;color:var(--muted);white-space:nowrap}
+
   @media(max-width:640px){
     body{padding:0 calc(14px + env(safe-area-inset-right)) calc(110px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left))}
 
@@ -316,6 +346,16 @@
     .tk-chev{order:0}
     .gb-btns button{font-size:12.5px;padding:8px 12px}
     .gb-long{display:none} .gb-short{display:inline}
+    .view-seg button{font-size:13.5px;padding:7px 12px}
+    .h-filter{margin:0 -14px 10px;padding:0 14px 2px}
+    .h-filter button{font-size:12.5px;padding:8px 14px}
+    .h-mhead{padding:10px 14px}
+    .h-row{padding:12px 14px}
+    .h-row:hover{background:none}
+    .h-row:active{background:#151b24}
+    .h-l1{flex-wrap:nowrap;gap:8px}
+    .h-nowv{display:none}
+    .h-now{font-size:12.5px}
     .token.collapsed .tk-chev{transform:rotate(-90deg)}
     .tk-metrics{margin-left:0;width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
     .tk-m{text-align:left}
@@ -448,13 +488,17 @@
 
   <!-- token groups -->
   <div class="groups-bar" id="groupsBar" style="display:none">
-    <h3>Positionen</h3>
+    <div class="view-seg" role="tablist" aria-label="Ansicht">
+      <button type="button" data-view="coins" role="tab"><span class="gb-long">Nach Coin</span><span class="gb-short">Coins</span></button>
+      <button type="button" data-view="history" role="tab">Verlauf</button>
+    </div>
     <div class="gb-btns">
       <button id="collapseAll" type="button" title="Alle Coins zuklappen">− Alle <span class="gb-long">zuklappen</span><span class="gb-short">zu</span></button>
       <button id="expandAll" type="button" title="Alle Coins aufklappen">+ Alle <span class="gb-long">aufklappen</span><span class="gb-short">auf</span></button>
     </div>
   </div>
   <div id="groups"></div>
+  <div id="history" style="display:none"></div>
 
   <div class="tools">
     <button id="exportBtn">↑ Export JSON</button>
@@ -520,6 +564,8 @@ let colorMap = {};
 const isPhone = () => window.matchMedia("(max-width:640px)").matches;
 let collapsed = new Set();   // collapsed coin sections (remembered per device)
 try{ collapsed = new Set(JSON.parse(localStorage.getItem("frist_collapsed")||"[]")); }catch(e){}
+let view = "coins", hFilter = "all";   // list view (Nach Coin | Verlauf) + coin filter in Verlauf
+try{ if(localStorage.getItem("frist_view")==="history") view="history"; }catch(e){}
 
 /* ---------- persistence: batches → Supabase, prefs → localStorage ---------- */
 function save(){ try{ localStorage.setItem("frist_prefs", JSON.stringify({target:state.target, prices:state.prices})); }catch(e){} }
@@ -531,7 +577,8 @@ async function fetchBatches(){
   state.batches = (data||[]).map(r=>({
     id:r.id, type:r.type, ticker:r.ticker,
     date:(r.bought_at||"").slice(0,10),
-    qty:Number(r.qty), entryPrice:Number(r.entry_price)
+    qty:Number(r.qty), entryPrice:Number(r.entry_price),
+    source:r.source||"app", createdAt:r.created_at||""
   }));
 }
 
@@ -804,6 +851,7 @@ function render(){
   const gEl=document.getElementById("groups");
   if(!state.batches.length){
     document.getElementById("groupsBar").style.display="none";
+    document.getElementById("history").style.display="none"; gEl.style.display="";
     gEl.innerHTML=`<div class="empty"><div class="big">Noch keine Positionen</div>Erfasse deinen ersten Batch — die Uhr für die 12-Monats-Frist startet ab dem Kaufdatum.</div>`;
     return;
   }
@@ -866,7 +914,57 @@ function render(){
     h.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); toggleCoin(h.parentElement); } });
   });
   updateGroupsBar();
+  renderHistory();
+  applyView();
 }
+
+/* ---------- order history (Verlauf) ---------- */
+const SRC_LBL = { telegram:"Telegram", app:"App", import:"Import" };
+function renderHistory(){
+  const el=document.getElementById("history");
+  const tickers=[...new Set(state.batches.map(b=>b.ticker))].sort();
+  if(hFilter!=="all" && !tickers.includes(hFilter)) hFilter="all";
+  const list=state.batches.filter(b=>hFilter==="all"||b.ticker===hFilter)
+    .sort((a,b)=> b.date.localeCompare(a.date) || String(b.createdAt).localeCompare(String(a.createdAt)));   // newest first
+  const total=list.reduce((s,b)=>s+b.qty*b.entryPrice,0);
+  const months={};
+  list.forEach(b=>{ const k=b.date.slice(0,7); (months[k]=months[k]||[]).push(b); });
+  const filter=`<div class="h-filter">${["all",...tickers].map(t=>`<button type="button" data-f="${t}" class="${t===hFilter?"on":""}">${t==="all"?"Alle":t}</button>`).join("")}</div>`;
+  const sum=`<div class="h-sum">${list.length} ${list.length===1?"Kauf":"Käufe"} · ${eur(total)} investiert</div>`;
+  const body=Object.entries(months).map(([ym,rows])=>{
+    const [y,m]=ym.split("-");
+    const mTotal=rows.reduce((s,b)=>s+b.qty*b.entryPrice,0);
+    return `<div class="h-month">
+      <div class="h-mhead"><span class="m">${MONTHS_DE[+m-1]} ${y}</span><span class="s">${rows.length}× · ${eur(mTotal)}</span></div>
+      ${rows.map(b=>{
+        const c=colorFor(b.ticker), st=statusOf(b), cost=b.qty*b.entryPrice, p=priceOf(b.ticker);
+        const now=p!=null?b.qty*p:null, g=(now!=null&&cost)?(now-cost)/cost*100:null;
+        const badge=st.key==="free"?`<span class="badge b-free"><span class="gb-long">STEUERFREI</span><span class="gb-short">FREI</span></span>`
+          :`<span class="badge ${st.key==="soon"?"b-soon":"b-locked"}">${st.remaining} T</span>`;
+        return `<div class="h-row" data-id="${b.id}" role="button" tabindex="0" title="bearbeiten">
+          <div class="h-l1"><span class="h-date">${fmtDate(parseD(b.date))}</span><span class="h-tk" style="background:${c}22;color:${c};border:1px solid ${c}55">${b.ticker}</span>${badge}</div>
+          <div class="h-amt">${eur(cost)}</div>
+          <div class="h-l2">${num(b.qty)} ${b.ticker} @ ${eur(b.entryPrice)} <span class="src">· ${SRC_LBL[b.source]||b.source}</span></div>
+          <div class="h-now">${now!=null?`<span class="h-nowv">heute ${eur(now)} </span><span style="color:${g>=0?"var(--free)":"var(--neg)"}">${g>=0?"+":""}${g.toFixed(1)}%</span>`:"—"}</div>
+        </div>`;
+      }).join("")}
+    </div>`;
+  }).join("");
+  el.innerHTML=filter+sum+(body||`<div class="empty">Keine Käufe für diesen Filter.</div>`);
+  el.querySelectorAll(".h-filter button").forEach(bt=>bt.onclick=()=>{ hFilter=bt.dataset.f; renderHistory(); });
+  el.querySelectorAll(".h-row").forEach(r=>{
+    r.onclick=()=>openEdit(r.dataset.id);
+    r.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openEdit(r.dataset.id); } };
+  });
+}
+function applyView(){
+  if(!state.batches.length) return;
+  document.querySelectorAll(".view-seg button").forEach(b=>{ const on=b.dataset.view===view; b.classList.toggle("on",on); b.setAttribute("aria-selected",String(on)); });
+  document.getElementById("groups").style.display = view==="coins" ? "" : "none";
+  document.getElementById("history").style.display = view==="history" ? "" : "none";
+  document.querySelector("#groupsBar .gb-btns").style.display = view==="coins" ? "" : "none";
+}
+function setView(v){ view=v; try{ localStorage.setItem("frist_view", v); }catch(e){} applyView(); }
 
 /* ---------- collapse single coins / all coins ---------- */
 function saveCollapsed(){ try{ localStorage.setItem("frist_collapsed", JSON.stringify([...collapsed])); }catch(e){} }
@@ -941,6 +1039,7 @@ document.getElementById("editModal").addEventListener("click",e=>{ if(e.target.i
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ closeCal(); closeEdit(); closeSheet(); closeMenu(); } });
 document.getElementById("fab").onclick=openSheet;
 document.getElementById("collapseAll").onclick=()=>setAllCoins(true);
+document.querySelectorAll(".view-seg button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
 document.getElementById("expandAll").onclick=()=>setAllCoins(false);
 document.getElementById("sheetX").onclick=closeSheet;
 document.getElementById("sheetBd").onclick=closeSheet;
