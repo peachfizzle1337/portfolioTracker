@@ -855,7 +855,9 @@ function render(){
     gEl.innerHTML=`<div class="empty"><div class="big">Noch keine Positionen</div>Erfasse deinen ersten Batch — die Uhr für die 12-Monats-Frist startet ab dem Kaufdatum.</div>`;
     return;
   }
-  gEl.innerHTML=Object.entries(groups).map(([tk,lots])=>{
+  // inventory: highest current value first (no live price yet → invested amount, same as the "Wert" shown)
+  const coinValue=(tk,lots)=>{ const p=priceOf(tk); return lots.reduce((s,b)=>s+b.qty*(p!=null?p:b.entryPrice),0); };
+  gEl.innerHTML=Object.entries(groups).sort((a,b)=>coinValue(b[0],b[1])-coinValue(a[0],a[1])).map(([tk,lots])=>{
     const c=colorFor(tk);
     const totQty=lots.reduce((s,b)=>s+b.qty,0);
     const totCost=lots.reduce((s,b)=>s+b.qty*b.entryPrice,0);
